@@ -69,13 +69,40 @@ class MainActivity : ComponentActivity(), MainContract.View {
     private var elapsed by mutableLongStateOf(0L)
 
     private fun startCapture() {
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) { requestMic.launch(Manifest.permission.RECORD_AUDIO); return }
-        currentAudio = File(filesDir, "recording_${System.currentTimeMillis()}.m4a")
-        recorder = MediaRecorder(this).apply { setAudioSource(MediaRecorder.AudioSource.MIC); setOutputFormat(MediaRecorder.OutputFormat.MPEG_4); setAudioEncoder(MediaRecorder.AudioEncoder.AAC); setOutputFile(currentAudio!!.absolutePath); prepare(); start() }
-        transcript = ""; elapsed = 0; isRecording = true; transcriber.start(Locale.getDefault().toLanguageTag())
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestMic.launch(Manifest.permission.RECORD_AUDIO)
+            return
+        }
+        audioRecorder.start().onSuccess {
+            transcript = ""
+            elapsed = 0
+            isRecording = true
+            transcriber.start(Locale.getDefault().toLanguageTag())
+        }.onFailure { aiError = it.message ?: "Unable to start recording." }
     }
 
-    private fun stopCapture() { recorder?.runCatching { stop(); release() }; recorder = null; transcriber.stop(); isRecording = false }
+    private fun pauseCapture() {
+        audioRecorder.pause().onSuccess { isRecording = false }
+            .onFailure { aiError = it.message ?: "Unable to pause recording." }
+    }
+
+    private fun resumeCapture() {
+        audioRecorder.resume().onSuccess { isRecording = true }
+            .onFailure { aiError = it.message ?: "Unable to resume recording." }
+    }
+
+    private fun stopCapture(): Boolean {
+        transcriber.stop()
+        val result = audioRecorder.stop().getOrElse {
+            aiError = it.message ?: "Unable to stop recording."
+            return false
+        }
+        currentAudioPath = result.file.absolutePath
+        elapsed = result.durationMs / 1000
+        isRecording = false
+        return true
+    }
+
     override fun render(state: MainContract.State) { this.state = state }
     override fun showError(message: String) { aiError = message }
     override fun onDestroy() { transcriber.release(); audioRecorder.release(); presenter.detach(); presenterScope.cancel(); super.onDestroy() }
