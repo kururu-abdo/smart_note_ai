@@ -6,7 +6,7 @@ plugins {
 }
 
 android { namespace = "com.kururu.smartnoteai"; compileSdk = 35
-    defaultConfig { applicationId = "com.kururu.smartnoteai"; minSdk = 26; targetSdk = 35; versionCode = 1; versionName = "1.0" }
+    defaultConfig { applicationId = "com.kururu.smartnoteai"; minSdk = 26; targetSdk = 35; versionCode = 1; versionName = "1.1" }
 }
 
 kotlin { jvmToolchain(17) }
@@ -28,5 +28,6 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("com.google.mlkit:genai-prompt:1.0.0-beta4")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
