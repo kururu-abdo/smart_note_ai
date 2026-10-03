@@ -8,4 +8,6 @@ data class Note(
     val durationSeconds: Long,
     val date: Long,
     val summary: String,
+    val transcript: String = "",
+    val audioPath: String? = null,
 )
