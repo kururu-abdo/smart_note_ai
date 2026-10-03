@@ -1,21 +1,21 @@
 package com.kururu.smartnoteai.data.ai
 
-import android.content.Context
 import com.google.mlkit.genai.prompt.GenerativeModel
 import com.kururu.smartnoteai.domain.ai.AiNoteGenerator
 
 class GeminiNanoNoteGenerator(
-    private val context: Context,
+    private val model: GenerativeModel,
 ) : AiNoteGenerator {
     override suspend fun generate(transcript: String): String {
-        val model = GenerativeModel(context)
+        require(transcript.isNotBlank())
+        val status = model.checkStatus()
+        check(status.name == "AVAILABLE") { "Gemini Nano is not available on this device" }
         val prompt = """
-            You are a concise meeting and lecture note assistant.
-            Transform the transcript into Notion-style Markdown.
-            Use only facts present in the transcript. Never invent people,
-            dates, decisions, tasks, or deadlines.
+            You are SmartNote AI, an on-device meeting and lecture note assistant.
+            Create concise Notion-style Markdown from the transcript.
+            Use only facts present in the transcript. Never invent names, decisions, tasks, dates or deadlines.
+            Preserve the transcript language.
 
-            Return these sections when supported:
             # Executive Summary
             ## 🎯 Key Points
             ## 🚀 Action Items
@@ -23,7 +23,7 @@ class GeminiNanoNoteGenerator(
             ## ❓ Open Questions
             ## 📌 Takeaways
 
-            Keep it concise and useful. Preserve the transcript language.
+            Omit unsupported sections. Keep the result concise.
 
             TRANSCRIPT:
             $transcript
