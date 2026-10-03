@@ -2,6 +2,8 @@ package com.kururu.smartnoteai.domain.speech
 
 interface SpeechTranscriber {
     fun start(languageTag: String = "en-US")
+    fun pause()
+    fun resume()
     fun stop()
     fun release()
     fun setListener(listener: Listener)
