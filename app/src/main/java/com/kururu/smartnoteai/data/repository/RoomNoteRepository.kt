@@ -11,10 +11,8 @@ class RoomNoteRepository(private val dao: NoteDao) : NoteRepository {
     override fun observeNotes(): Flow<List<Note>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
 
     override suspend fun save(note: Note) {
-        dao.insert(
-            NoteEntity(note.id, note.title, note.description, note.type, note.durationSeconds, note.date, note.summary)
-        )
+        dao.insert(NoteEntity(note.id, note.title, note.description, note.type, note.durationSeconds, note.date, note.summary, note.transcript, note.audioPath))
     }
 
-    private fun NoteEntity.toDomain() = Note(id, title, description, type, durationSeconds, createdAt, summary)
+    private fun NoteEntity.toDomain() = Note(id, title, description, type, durationSeconds, createdAt, summary, transcript, audioPath)
 }
