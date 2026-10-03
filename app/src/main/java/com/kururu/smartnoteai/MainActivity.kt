@@ -2,7 +2,6 @@ package com.kururu.smartnoteai
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.media.MediaRecorder
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,13 +24,13 @@ import androidx.compose.ui.unit.sp
 import com.kururu.smartnoteai.di.AppContainer
 import com.kururu.smartnoteai.domain.model.Note
 import com.kururu.smartnoteai.domain.speech.SpeechTranscriber
+import com.kururu.smartnoteai.domain.audio.AudioRecorder
 import com.kururu.smartnoteai.presentation.MainContract
 import com.kururu.smartnoteai.presentation.MainPresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import java.io.File
 import java.util.Locale
 
 private val Bg = Color(0xFFF7F7FB)
@@ -44,8 +43,8 @@ class MainActivity : ComponentActivity(), MainContract.View {
     private lateinit var presenter: MainPresenter
     private lateinit var transcriber: SpeechTranscriber
     private val presenterScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var recorder: MediaRecorder? = null
-    private var currentAudio: File? = null
+    private lateinit var audioRecorder: AudioRecorder
+    private var currentAudioPath: String? = null
     private var state by mutableStateOf(MainContract.State())
     private val requestMic = registerForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) startCapture() }
 
@@ -54,6 +53,7 @@ class MainActivity : ComponentActivity(), MainContract.View {
         container = AppContainer(this)
         presenter = MainPresenter(container.noteRepository, container.generateSmartNotesUseCase, presenterScope)
         transcriber = container.speechTranscriber
+        audioRecorder = container.audioRecorder
         transcriber.setListener(object : SpeechTranscriber.Listener {
             override fun onPartial(text: String) { transcript = text }
             override fun onFinal(text: String) { transcript = if (transcript.isBlank()) text else "$transcript $text" }
@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity(), MainContract.View {
     private fun stopCapture() { recorder?.runCatching { stop(); release() }; recorder = null; transcriber.stop(); isRecording = false }
     override fun render(state: MainContract.State) { this.state = state }
     override fun showError(message: String) { aiError = message }
-    override fun onDestroy() { transcriber.release(); presenter.detach(); presenterScope.cancel(); super.onDestroy() }
+    override fun onDestroy() { transcriber.release(); audioRecorder.release(); presenter.detach(); presenterScope.cancel(); super.onDestroy() }
 
     @Composable private fun SmartNoteApp() {
         var screen by remember { mutableStateOf("home") }
